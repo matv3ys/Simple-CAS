@@ -274,6 +274,9 @@ char *parse_string(char *string) {
     return string;
 }
 
+
+// -26*g*g*b*d*d*d*d*f*f*f*f*f*h*h*i*k*k*l*m*n*n*n*o*o*p*p*p*p*q*q*q*q*r*t*t*t*t*u*u*u*v*v*v*w*w*x*y*y*z*z*z*z
+// TODO: rewrite, split into funcs
 struct product_head *create_product(char *product_token) {
     struct product_head *product;
     struct factor *cur_factor;
@@ -340,8 +343,22 @@ struct product_head *create_product(char *product_token) {
             start->next = new_factor;
             product->degree = 1;
         } else {
+            int inserted = 0;
             cur_factor = start->next;
-            while (1) {
+            if (variable < cur_factor->variable) {
+                new_factor = (struct factor *) malloc(sizeof(struct factor));
+                if (new_factor == NULL) {
+                    free_product(product);
+                    return NULL;
+                }
+                new_factor->variable = variable;
+                new_factor->coef = 1;
+                new_factor->next = cur_factor;
+                start->next = new_factor;
+                product->degree += 1;
+                inserted = 1;
+            }
+            while (!inserted) {
                 if (variable == cur_factor->variable) {
                     cur_factor->coef += 1;
                     product->degree += 1;
