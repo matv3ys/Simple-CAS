@@ -16,5 +16,5 @@ struct product_head {
 struct product_head *parse_form(char *string);
 void free_products_list(struct product_head* product);
 void print_psf(struct product_head*);
-int is_equal(struct product_head *a, struct product_head *b);
+int is_equal(struct product_head **a, struct product_head **b);
 #endif //INTERNTASK_PSFORM_H

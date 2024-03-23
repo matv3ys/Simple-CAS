@@ -5,6 +5,9 @@
 #include <ctype.h>
 #include "PSform.h"
 
+#define WITH_COEFS 1
+#define WITHOUT_COEFS 0
+
 void free_product(struct product_head* product) {
     struct factor *cur = product->first;
     struct factor *next;
@@ -83,11 +86,12 @@ void print_psf(struct product_head *product) {
 }
 
 /*
- * if products are equal (has same variables and their exponents), returns 0
- * if product a > product b (has higher degree or lexicographically low variable has higher exponent), returns 1
- * returns -1 in other cases
+ * 1. if products are equal (has same variables and their exponents), returns 0
+ * 2. if product a > product b (has higher degree or lexicographically low variable has higher exponent), returns 1
+ * 3. returns -1 in other cases
+ * 4. with_coefs = 0 if function is used for sorting products in sum
 */
-int compare_products(struct product_head *a, struct product_head *b) {
+int compare_products(int with_coefs, struct product_head *a, struct product_head *b) {
     struct factor *factor_a;
     struct factor *factor_b;
     char variable_a;
@@ -98,11 +102,13 @@ int compare_products(struct product_head *a, struct product_head *b) {
         return 1;
     if (a->degree < b->degree)
         return -1;
-    if (a->degree == 0) {
+    if (with_coefs) {
         if (a->first->coef > b->first->coef)
             return 1;
         if (b->first->coef > a->first->coef)
             return -1;
+    }
+    if (a->degree == 0) {
         return 0;
     }
     factor_a = a->first->next;
@@ -123,19 +129,21 @@ int compare_products(struct product_head *a, struct product_head *b) {
         factor_a = factor_a->next;
         factor_b = factor_b->next;
     }
-    if (a->first->coef > b->first->coef)
-        return 1;
-    if (b->first->coef > a->first->coef)
-        return -1;
     return 0;
 }
 
-struct product_head *list_insert(struct product_head *list, struct product_head *product) {
+struct product_head *list_insert_with_merge(struct product_head *list, struct product_head *product) {
     struct product_head *prev;
     struct product_head *next;
+    int cmp;
     if (list == NULL)
         return product;
-    if (compare_products(product, list) >=  0) {
+    if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >=  0) {
+        if (!cmp) {
+            list->first->coef += product->first->coef;
+            free_product(product);
+            return list;
+        }
         product->next = list;
         return product;
     }
@@ -146,7 +154,12 @@ struct product_head *list_insert(struct product_head *list, struct product_head 
             prev->next = product;
             return list;
         }
-        if (compare_products(product, next) >= 0) {
+        if ((cmp = compare_products(WITHOUT_COEFS, product, next)) >= 0) {
+            if (!cmp) {
+                next->first->coef += product->first->coef;
+                free_product(product);
+                return list;
+            }
             prev->next = product;
             product->next = next;
             return list;
@@ -163,16 +176,28 @@ struct product_head *sort(struct product_head *products_list) {
         cur = products_list;
         products_list = products_list->next;
         cur->next = NULL;
-        res = list_insert(res, cur);
+        res = list_insert_with_merge(res, cur);
     }
     return res;
 }
 
-int is_equal(struct product_head *a, struct product_head *b) {
-    a = sort(a);
-    b = sort(b);
-    print_psf(a);
-    print_psf(b);
+int is_equal(struct product_head **a, struct product_head **b) {
+    struct product_head *form_a = *a;
+    struct product_head *form_b = *b;
+    *a = sort(form_a);
+    *b = sort(form_b);
+    form_a = *a;
+    form_b = *b;
+    while (form_a != NULL && form_b != NULL) {
+        if (compare_products(WITH_COEFS, form_a, form_b) != 0)
+            return 1;
+        form_a = form_a->next;
+        form_b = form_b->next;
+    }
+    if (form_a == NULL && form_b == NULL)
+        return 0;
+    else
+        return 1;
 }
 
 // removes unused characters
