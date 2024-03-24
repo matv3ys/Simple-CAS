@@ -24,9 +24,78 @@ void free_products_list(struct product_head* product) {
     while (cur != NULL) {
         next = cur->next;
         free_product(cur);
+        //free(cur);
         cur = next;
     }
 }
+
+/*
+struct factor *copy_factor(struct factor *src) {
+    struct factor *res = NULL;
+    struct factor *cur;
+    struct factor *new_factor;
+
+    if (src == NULL) {
+        return res;
+    }
+
+    res = (struct factor *) malloc(sizeof(struct factor));
+    if (res == NULL)
+        return res;
+    memcpy(res, src, sizeof(struct factor));
+    res->variable = src->vafactor
+    res->coef = src->coef;
+
+    cur = res;
+    src = src->next;
+    while (src != NULL) {
+        new_factor = (struct factor *) malloc(sizeof(struct factor));
+        if (new_factor == NULL) {
+            free_product(res);
+            return NULL;
+        }
+        memcpy(new_factor, src, sizeof(struct factor));
+        new_factor->first = copy_factor(src->first);
+        cur->next = new_factor;
+        cur = cur->next;
+        src = src->next;
+    }
+    return res;
+}
+
+
+struct product_head *copy_sum(struct product_head *src) {
+    struct product_head *res = NULL;
+    struct product_head *cur;
+    struct product_head *new_product;
+
+    if (src == NULL) {
+        return res;
+    }
+
+    res = (struct product_head *) malloc(sizeof(struct product_head));
+    if (res == NULL)
+        return res;
+    memcpy(res, src, sizeof(struct product_head));
+    res->first = copy_factor(src->first);
+
+    cur = res;
+    src = src->next;
+    while (src != NULL) {
+        new_product = (struct product_head *) malloc(sizeof(struct product_head));
+        if (new_product == NULL) {
+            free_product(res);
+            return NULL;
+        }
+        memcpy(new_product, src, sizeof(struct product_head));
+        new_product->first = copy_factor(src->first);
+        cur->next = new_product;
+        cur = cur->next;
+        src = src->next;
+    }
+    return res;
+}
+ */
 
 void print_psf(struct product_head *product) {
     struct factor* cur_factor;
@@ -140,6 +209,7 @@ struct product_head *sum_insert_with_merge(struct product_head *list, struct pro
     struct product_head *prev;
     struct product_head *next;
     int cmp;
+
     if (list == NULL)
         return product;
     if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >=  0) {
@@ -331,18 +401,47 @@ char *parse_string(char *string) {
     return string;
 }
 
+struct factor *product_insert_with_merge(struct factor *first_factor, struct factor *new_factor) {
+    struct factor *cur;
+    struct factor *next;
+    if (first_factor == NULL) {
+        return new_factor;
+    }
+    if (new_factor->variable == '_') {
+        first_factor->coef *= new_factor->coef;
+        free(new_factor);
+        return first_factor;
+    }
+    cur = first_factor;
+    while (1) {
+        next = cur->next;
+        if (next == NULL) {
+            cur->next = new_factor;
+            return first_factor;
+        }
+        if (next->variable == new_factor->variable) {
+            next->coef += new_factor->coef;
+            free(new_factor);
+            return first_factor;
+        }
+        if (new_factor->variable < next->variable) {
+            cur->next = new_factor;
+            new_factor->next = next;
+            return first_factor;
+        }
+        cur = next;
+    }
+}
+
 // TODO: rewrite, split into funcs
 struct product_head *create_product(char *product_token) {
     struct product_head *product;
-    struct factor *cur_factor;
     struct factor *new_factor;
-    struct factor *start;
-    int coef;
-    short is_coef;
     char *factor_token;
+    short is_coef;
+    int coef;
 
     factor_token = strtok(product_token, "*");
-
 
     coef = 1;
     is_coef = 0;
@@ -360,16 +459,19 @@ struct product_head *create_product(char *product_token) {
         free(product);
         return NULL;
     }
+    //*new_factor = (struct factor) {' ', 1, NULL};
     new_factor->variable = '_';
     new_factor->coef = coef;
     new_factor->next = NULL;
-
     product->degree = 0;
     product->first = new_factor;
     product->next = NULL;
 
-    new_factor = NULL;
-    if (!is_coef) {
+
+    if (is_coef) {
+        factor_token = strtok(NULL, "*");
+    }
+    while (factor_token != NULL) {
         new_factor = (struct factor *) malloc(sizeof(struct factor));
         if (new_factor == NULL) {
             free_product(product);
@@ -378,77 +480,8 @@ struct product_head *create_product(char *product_token) {
         new_factor->variable = factor_token[0];
         new_factor->coef = 1;
         new_factor->next = NULL;
-        product->first->next = new_factor;
-        product->degree = 1;
-    }
-
-    start = product->first;
-    factor_token = strtok(NULL, "*");
-    while (factor_token != NULL) {
-        char variable = factor_token[0];
-        if (start->next == NULL) {
-            new_factor = (struct factor *) malloc(sizeof(struct factor));
-            if (new_factor == NULL) {
-                free_product(product);
-                return NULL;
-            }
-            new_factor->variable = variable;
-            new_factor->coef = 1;
-            new_factor->next = NULL;
-            start->next = new_factor;
-            product->degree = 1;
-        } else {
-            int inserted = 0;
-            cur_factor = start->next;
-            if (variable < cur_factor->variable) {
-                new_factor = (struct factor *) malloc(sizeof(struct factor));
-                if (new_factor == NULL) {
-                    free_product(product);
-                    return NULL;
-                }
-                new_factor->variable = variable;
-                new_factor->coef = 1;
-                new_factor->next = cur_factor;
-                start->next = new_factor;
-                product->degree += 1;
-                inserted = 1;
-            }
-            while (!inserted) {
-                if (variable == cur_factor->variable) {
-                    cur_factor->coef += 1;
-                    product->degree += 1;
-                    break;
-                }
-                if (cur_factor->next == NULL) {
-                    new_factor = (struct factor *) malloc(sizeof(struct factor));
-                    if (new_factor == NULL) {
-                        free_product(product);
-                        return NULL;
-                    }
-                    new_factor->variable = variable;
-                    new_factor->coef = 1;
-                    new_factor->next = NULL;
-                    cur_factor->next = new_factor;
-                    product->degree += 1;
-                    break;
-                }
-                if (cur_factor->next->variable <= variable) {
-                    cur_factor = cur_factor->next;
-                } else {
-                    new_factor = (struct factor *) malloc(sizeof(struct factor));
-                    if (new_factor == NULL) {
-                        free_product(product);
-                        return NULL;
-                    }
-                    new_factor->variable = variable;
-                    new_factor->coef = 1;
-                    new_factor->next = cur_factor->next;
-                    cur_factor->next = new_factor;
-                    product->degree += 1;
-                    break;
-                }
-            }
-        }
+        product->first = product_insert_with_merge(product->first, new_factor);
+        product->degree += 1;
         factor_token = strtok(NULL, "*");
     }
     return product;
