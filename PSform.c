@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include "PSform.h"
@@ -137,7 +136,7 @@ int compare_products(int with_coefs, struct product_head *a, struct product_head
     return 0;
 }
 
-struct product_head *list_insert_with_merge(struct product_head *list, struct product_head *product) {
+struct product_head *sum_insert_with_merge(struct product_head *list, struct product_head *product) {
     struct product_head *prev;
     struct product_head *next;
     int cmp;
@@ -207,29 +206,55 @@ struct product_head *sort(struct product_head *products_list) {
         cur = products_list;
         products_list = products_list->next;
         cur->next = NULL;
-        res = list_insert_with_merge(res, cur);
+        res = sum_insert_with_merge(res, cur);
     }
     res = clear_zero_products(res);
     return res;
 }
 
 int is_equal(struct product_head **a, struct product_head **b) {
-    struct product_head *form_a = *a;
-    struct product_head *form_b = *b;
-    *a = sort(form_a);
-    *b = sort(form_b);
-    form_a = *a;
-    form_b = *b;
-    while (form_a != NULL && form_b != NULL) {
-        if (compare_products(WITH_COEFS, form_a, form_b) != 0)
+    struct product_head *cur_a;
+    struct product_head *cur_b;
+
+    *a = sort(*a);
+    *b = sort(*b);
+    cur_a = *a;
+    cur_b = *b;
+    while (cur_a != NULL && cur_b != NULL) {
+        if (compare_products(WITH_COEFS, cur_a, cur_b) != 0)
             return 1;
-        form_a = form_a->next;
-        form_b = form_b->next;
+        cur_a = (cur_a)->next;
+        cur_b = (cur_b)->next;
     }
-    if (form_a == NULL && form_b == NULL)
+    if (cur_a == NULL && cur_b == NULL)
         return 0;
     else
         return 1;
+}
+
+void add(struct product_head **a, struct product_head **b) {
+    struct product_head *cur;
+
+    *a  = sort(*a);
+    while (*b != NULL) {
+        cur = *b;
+        *b = (*b)->next;
+        cur->next = NULL;
+        *a = sum_insert_with_merge(*a, cur);
+    }
+    *a = clear_zero_products(*a);
+}
+
+void negate_sum(struct product_head *a) {
+    while (a != NULL) {
+        a->first->coef *= -1;
+        a = a->next;
+    }
+}
+
+void subtract(struct product_head **a, struct product_head **b) {
+    negate_sum(*b);
+    add(a, b);
 }
 
 // removes unused characters
@@ -306,8 +331,6 @@ char *parse_string(char *string) {
     return string;
 }
 
-
-// -26*g*g*b*d*d*d*d*f*f*f*f*f*h*h*i*k*k*l*m*n*n*n*o*o*p*p*p*p*q*q*q*q*r*t*t*t*t*u*u*u*v*v*v*w*w*x*y*y*z*z*z*z
 // TODO: rewrite, split into funcs
 struct product_head *create_product(char *product_token) {
     struct product_head *product;
@@ -428,7 +451,6 @@ struct product_head *create_product(char *product_token) {
         }
         factor_token = strtok(NULL, "*");
     }
-
     return product;
 }
 

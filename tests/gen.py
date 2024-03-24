@@ -11,11 +11,11 @@ def get_output(op: str, form_1: str, form_2: str) -> str:
     elif op == "!=":
         return "not equal"
     elif op == "+":
-        return str(sympify(form_1) + sympify(form_2))
+        return to_spf(str(sympify(form_1) + sympify(form_2)))
     elif op == "-":
-        return str(sympify(form_1) - sympify(form_2))
+        return to_spf(str(sympify(form_1) - sympify(form_2)))
     elif op == "*":
-        return str(poly(sympify(form_1) * sympify(form_2)).as_expr())
+        return to_spf(str(poly(sympify(form_1) * sympify(form_2)).as_expr()))
 
 
 def product():
@@ -31,7 +31,7 @@ def product():
 
 def sm():
     res = []
-    for i in range(100):
+    for i in range(200):
         res.append(product())
     return ''.join(res)
 

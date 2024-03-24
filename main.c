@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <string.h>
 #include "PSform.h"
+#include <time.h>
 
 char *get_str() {
     char buf[11] = {0};
@@ -36,15 +37,18 @@ char *get_str() {
 
 int check_operation(char operation) {
     switch (operation) {
-        case '=': ;
-        case '+': ;
-        case '-': ;
-        case '*': return 0;
-        default: return 1;
+        case '=':;
+        case '+':;
+        case '-':;
+        case '*':
+            return 0;
+        default:
+            return 1;
     }
 }
 
 int main() {
+    //clock_t t;
     char operation;
     char *input_form_1;
     char *input_form_2;
@@ -67,13 +71,28 @@ int main() {
         return 1;
     }
 
+    //t = clock();
     form_1 = parse_form(input_form_1);
     form_2 = parse_form(input_form_2);
     switch (operation) {
-        case '=' : printf("%s\n", is_equal(&form_1, &form_2) ? "not equal" : "equal"); break;
-        default: printf("Runtime error\n");
+        case '=':
+            printf("%s\n", is_equal(&form_1, &form_2) ? "not equal" : "equal");
+            break;
+        case '+':
+            add(&form_1, &form_2);
+            print_psf(form_1);
+            break;
+        case '-':
+            subtract(&form_1, &form_2);
+            print_psf(form_1);
+            break;
+        default:
+            printf("Runtime error\n");
     }
-
-
+    free_products_list(form_1);
+    free_products_list(form_2);
+    //t = clock() - t;
+    //double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    //printf("psf took %f seconds to execute \n", time_taken);
     return 0;
 }
