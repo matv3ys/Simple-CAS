@@ -31,11 +31,16 @@ void free_products_list(struct product_head* product) {
 
 void print_psf(struct product_head *product) {
     struct factor* cur_factor;
-    int coef;
     char variable;
-    int exponent;
     short is_not_first_product = 0;
     short printed_coef = 0;
+    int exponent;
+    int coef;
+
+    if (product == NULL) {
+        printf("0\n");
+        return;
+    }
 
     while (product != NULL) {
         cur_factor = product->first;
@@ -169,6 +174,32 @@ struct product_head *list_insert_with_merge(struct product_head *list, struct pr
     }
 }
 
+struct product_head *clear_zero_products(struct product_head *products_list) {
+    struct product_head *res = NULL;
+    struct product_head *end = NULL;
+    struct product_head *cur = NULL;
+    while (products_list != NULL) {
+        if (products_list->first->coef == 0) {
+            cur = products_list;
+            products_list = products_list->next;
+            free_product(cur);
+            continue;
+        }
+        if (res == NULL) {
+            res = products_list;
+            end = products_list;
+            products_list = products_list->next;
+            res->next = NULL;
+            continue;
+        }
+        end->next = products_list;
+        products_list = products_list->next;
+        end = end->next;
+        end->next = NULL;
+    }
+    return res;
+}
+
 struct product_head *sort(struct product_head *products_list) {
     struct product_head *res = NULL;
     struct product_head *cur;
@@ -178,6 +209,7 @@ struct product_head *sort(struct product_head *products_list) {
         cur->next = NULL;
         res = list_insert_with_merge(res, cur);
     }
+    res = clear_zero_products(res);
     return res;
 }
 
@@ -423,13 +455,16 @@ struct product_head *parse_form(char *string) {
             free(string);
             return NULL;
         }
-
-        if (products_list == NULL) {
-            products_list = product;
-            products_list_end = product;
+        if (product->first->coef != 0) {
+            if (products_list == NULL) {
+                products_list = product;
+                products_list_end = product;
+            } else {
+                products_list_end->next = product;
+                products_list_end = product;
+            }
         } else {
-            products_list_end->next = product;
-            products_list_end = product;
+            free_product(product);
         }
         if (product_token + offset_next < end_of_string)
             product_token = strtok(product_token + offset_next, "+");
