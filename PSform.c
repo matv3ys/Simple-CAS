@@ -7,9 +7,10 @@
 #define WITH_COEFS 1
 #define WITHOUT_COEFS 0
 
-void free_factor_list(struct factor* first_factor) {
+void free_factor_list(struct factor *first_factor) {
     struct factor *cur = first_factor;
     struct factor *next;
+
     while (cur != NULL) {
         next = cur->next;
         free(cur);
@@ -17,9 +18,10 @@ void free_factor_list(struct factor* first_factor) {
     }
 }
 
-void free_product_list(struct product_head* product) {
+void free_product_list(struct product_head *product) {
     struct product_head *cur = product;
     struct product_head *next;
+
     while (cur != NULL) {
         next = cur->next;
         free_factor_list(cur->first);
@@ -28,14 +30,15 @@ void free_product_list(struct product_head* product) {
     }
 }
 
-// Used during form parsing and multiplication operations
+/* Used during form parsing and multiplication operations */
 struct factor *factor_list_insert(struct factor *first_factor, struct factor *new_factor) {
     struct factor *cur;
     struct factor *next;
+
     if (first_factor == NULL) {
         return new_factor;
     }
-    if (new_factor->variable == '_') { // For convenience of multiplication operation
+    if (new_factor->variable == '_') {  /* For convenience of multiplication operation */
         first_factor->coef *= new_factor->coef;
         free(new_factor);
         return first_factor;
@@ -65,7 +68,7 @@ struct factor *factor_list_insert(struct factor *first_factor, struct factor *ne
  * 1. if products are equal (has same variables and their exponents), returns 0
  * 2. if product a > product b (has higher degree or lexicographically low variable has higher exponent), returns 1
  * 3. returns -1 in other cases
- * 4. with_coefs = 0 if function is used for sorting products in sum
+ * 4. with_coefs = 0 if function is used for inserting in sum
 */
 int compare_products(int with_coefs, struct product_head *a, struct product_head *b) {
     struct factor *factor_a;
@@ -74,6 +77,7 @@ int compare_products(int with_coefs, struct product_head *a, struct product_head
     char variable_b;
     int exponent_a;
     int exponent_b;
+
     if (a->degree > b->degree)
         return 1;
     if (a->degree < b->degree)
@@ -108,10 +112,12 @@ int compare_products(int with_coefs, struct product_head *a, struct product_head
     return 0;
 }
 
+/* clear zero products in form, that may appear during simplification */
 struct product_head *clear_zero_products(struct product_head *products_list) {
     struct product_head *res = NULL;
     struct product_head *end;
     struct product_head *cur;
+
     while (products_list != NULL) {
         if (products_list->first->coef == 0) {
             cur = products_list;
@@ -135,7 +141,7 @@ struct product_head *clear_zero_products(struct product_head *products_list) {
     return res;
 }
 
-// Inserts a new element and makes simplification if possible
+/* Inserts a new element and makes simplification if possible */
 struct product_head *product_list_insert(struct product_head *list, struct product_head *product) {
     struct product_head *prev;
     struct product_head *next;
@@ -143,7 +149,7 @@ struct product_head *product_list_insert(struct product_head *list, struct produ
 
     if (list == NULL)
         return product;
-    if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >=  0) {
+    if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >= 0) {
         if (!cmp) {
             list->first->coef += product->first->coef;
             free_factor_list(product->first);
@@ -253,23 +259,12 @@ struct product_head *copy_product_list(struct product_head *src) {
     return res;
 }
 
-struct product_head *sort(struct product_head *products_list) {
-    struct product_head *res = NULL;
-    struct product_head *cur;
-    while (products_list != NULL) {
-        cur = products_list;
-        products_list = products_list->next;
-        cur->next = NULL;
-        res = product_list_insert(res, cur);
-    }
-    res = clear_zero_products(res);
-    return res;
-}
-
-// removes unused characters
+/* removes unused characters from string */
 char *remove_chars(char *string, size_t size) {
     char c;
+    char *new_string;
     size_t pos = 0;
+
     for (size_t i = 0; i < size; i++) {
         c = string[i];
         if (c == 42 || c == 43 || c == 45 || (47 < c && c < 58) || (64 < c && c < 91) || (96 < c && c < 123)) {
@@ -278,7 +273,7 @@ char *remove_chars(char *string, size_t size) {
     }
     string[pos] = '\0';
     if (pos < size) {
-        char *new_string = (char *) realloc(string, pos + 1);
+        new_string = (char *) realloc(string, pos + 1);
         if (!new_string) {
             free(string);
             return NULL;
@@ -288,16 +283,19 @@ char *remove_chars(char *string, size_t size) {
     return string;
 }
 
-// adds '+' separator before negative product
+/* adds '+' separator before negative product */
 char *separate_negative_products(char *string, size_t size) {
     char cur, next;
+    char *new_string;
     size_t pos = 0;
-    char *new_string = (char *) malloc((size * 3 + 1) * sizeof(char));
+
+
+    new_string = (char *) malloc((size * 3 + 1) * sizeof(char));
     if (!new_string) {
         free(string);
         return NULL;
     }
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         cur = string[i];
         next = string[i + 1];
         if (cur == '-')
@@ -313,25 +311,30 @@ char *separate_negative_products(char *string, size_t size) {
     return new_string;
 }
 
-
+/* prepares input string for processing */
 char *parse_string(char *string) {
     size_t size;
+
     if (!string)
         return NULL;
+
     size = strlen(string);
     if (!size) {
         free(string);
         return NULL;
     }
+
     string = remove_chars(string, size);
     if (!string) {
         return NULL;
     }
+
     size = strlen(string);
     if (!size) {
         free(string);
         return NULL;
     }
+
     string = separate_negative_products(string, size);
     if (!string) {
         return NULL;
@@ -339,7 +342,6 @@ char *parse_string(char *string) {
 
     return string;
 }
-
 
 
 struct product_head *create_product(char *product_token) {
@@ -352,7 +354,7 @@ struct product_head *create_product(char *product_token) {
     factor_token = strtok(product_token, "*");
 
     coef = 1;
-    is_coef = 0;
+    is_coef = 0;    /* for handling situation when coefficient is not explicitly specified */
     if (factor_token[0] == '-' || isdigit(factor_token[0])) {
         is_coef = 1;
         coef = atoi(factor_token);
@@ -367,7 +369,7 @@ struct product_head *create_product(char *product_token) {
         free(product);
         return NULL;
     }
-    //*new_factor = (struct factor) {' ', 1, NULL};
+
     new_factor->variable = '_';
     new_factor->coef = coef;
     new_factor->next = NULL;
@@ -396,11 +398,12 @@ struct product_head *create_product(char *product_token) {
     return product;
 }
 
+/* general function for parse user input */
 struct product_head *parse_form(char *string) {
     struct product_head *products_list = NULL;
     struct product_head *product;
     char *end_of_string;
-    char* product_token;
+    char *product_token;
 
     string = parse_string(string);
     if (string == NULL) {
@@ -435,12 +438,11 @@ struct product_head *parse_form(char *string) {
     return products_list;
 }
 
+/* checks if a equals b */
 int is_equal(struct product_head **a, struct product_head **b) {
     struct product_head *cur_a;
     struct product_head *cur_b;
 
-    //*a = sort(*a);
-    //*b = sort(*b);
     cur_a = *a;
     cur_b = *b;
     while (cur_a != NULL && cur_b != NULL) {
@@ -455,6 +457,7 @@ int is_equal(struct product_head **a, struct product_head **b) {
         return 1;
 }
 
+/* performs a + b */
 struct product_head *add(struct product_head *a, struct product_head *b) {
     struct product_head *res = copy_product_list(a);
     struct product_head *terms = copy_product_list(b);
@@ -470,6 +473,7 @@ struct product_head *add(struct product_head *a, struct product_head *b) {
     return res;
 }
 
+/* for input a returns -a */
 void negate_sum(struct product_head *a) {
     while (a != NULL) {
         a->first->coef *= -1;
@@ -477,7 +481,7 @@ void negate_sum(struct product_head *a) {
     }
 }
 
-// Performs a - b
+/* performs a - b */
 struct product_head *subtract(struct product_head *a, struct product_head *b) {
     struct product_head *res;
     struct product_head *b_copy = copy_product_list(b);
@@ -487,7 +491,6 @@ struct product_head *subtract(struct product_head *a, struct product_head *b) {
     free_product_list(b_copy);
     return res;
 }
-
 
 struct product_head *multiply_form_product(struct product_head *form, struct factor *first_factor) {
     struct product_head *res = copy_product_list(form);
@@ -511,6 +514,7 @@ struct product_head *multiply_form_product(struct product_head *form, struct fac
     return res;
 }
 
+/* performs a * b */
 struct product_head *multiply_forms(struct product_head *a, struct product_head *b) {
     struct product_head *res = NULL;
     struct product_head *products;
@@ -534,7 +538,7 @@ struct product_head *multiply_forms(struct product_head *a, struct product_head 
 }
 
 void print_psf(struct product_head *product) {
-    struct factor* cur_factor;
+    struct factor *cur_factor;
     char variable;
     short is_not_first_product = 0;
     short printed_coef = 0;

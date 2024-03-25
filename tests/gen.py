@@ -18,6 +18,7 @@ def get_output(op: str, form_1: str, form_2: str) -> str:
     elif op == "*":
         return to_spf(str(poly(sympify(form_1) * sympify(form_2)).as_expr()))
 
+
 def product():
     coef = random.randint(-100, 100)
     if coef >= 0:
@@ -58,17 +59,20 @@ if __name__ == "__main__":
         print("Incorrect test number")
         sys.exit(1)
     test_num = abs(int(test_num))
+    if 1 <= test_num <= 20:
+        print("Incorrect test number")
+        sys.exit(1)
     form_1 = sm()
     if op == "=":
         form_2 = form_1
     else:
         form_2 = sm()
-    with open(f"test{test_num}.txt", "w") as f:
+    with open(f"./data/test{test_num}.txt", "w") as f:
         f.write(op + '\n')
         f.write(form_1 + '\n')
         f.write(form_2)
     form_1 = sympify(form_1)
     form_2 = sympify(form_2)
     output = get_output(op, form_1, form_2)
-    with open(f"output{test_num}.txt", "w") as f:
+    with open(f"./data/output{test_num}.txt", "w") as f:
         f.write(output + '\n')

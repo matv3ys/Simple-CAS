@@ -2,8 +2,8 @@
 #define INTERNTASK_PSFORM_H
 
 struct factor {
-    char variable; // variable == "_" is for product coefficient
-    int coef; // product coefficient or exponent
+    char variable; /* variable == "_" is for product coefficient */
+    int coef; /* product coefficient or exponent */
     struct factor *next;
 };
 
@@ -16,6 +16,7 @@ struct product_head {
 struct product_head *parse_form(char *string);
 void free_product_list(struct product_head* product);
 void print_psf(struct product_head*);
+
 int is_equal(struct product_head **a, struct product_head **b);
 struct product_head *add(struct product_head *a, struct product_head *b);
 struct product_head *subtract(struct product_head *a, struct product_head *b);

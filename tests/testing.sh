@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd ..
-make
+make $1
 
 if [ $? -ne 0 ]; then
     echo "Compilation error"
@@ -9,8 +9,8 @@ if [ $? -ne 0 ]; then
 fi
 
 for i in {1..20}; do
-    input_file="./tests/test${i}.txt"
-    output_file="./tests/output${i}.txt"
+    input_file="./tests/data/test${i}.txt"
+    output_file="./tests/data/output${i}.txt"
 
     actual_output=$(./psf < "$input_file")
 

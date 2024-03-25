@@ -2,12 +2,12 @@
 #include <malloc.h>
 #include <string.h>
 #include "PSform.h"
-#include <time.h>
 
 char *get_str() {
     char buf[11] = {0};
     char *res = NULL;
-    int len = 0;
+    char *res_tmp = NULL;
+    size_t len = 0;
     int n;
 
     do {
@@ -17,9 +17,15 @@ char *get_str() {
                 return NULL;
             }
         } else if (n > 0) {
-            int chunk_len = strlen(buf);
-            int str_len = len + chunk_len;
-            res = realloc(res, str_len + 1);
+            size_t chunk_len = strlen(buf);
+            size_t str_len = len + chunk_len;
+            res_tmp = realloc(res, str_len + 1);
+            if (res_tmp == NULL) {
+                free(res);
+                return NULL;
+            } else {
+                res = res_tmp;
+            }
             memcpy(res + len, buf, chunk_len);
             len = str_len;
         } else {
@@ -48,13 +54,13 @@ int check_operation(int operation) {
 }
 
 int main() {
-    //clock_t t;
     int operation;
     char *input_form_1;
     char *input_form_2;
     struct product_head *form_1;
     struct product_head *form_2;
     struct product_head *result;
+
 
     operation = getchar();
     if (getchar() != '\n' || check_operation(operation)) {
@@ -73,7 +79,6 @@ int main() {
         return 1;
     }
 
-    //t = clock();
     form_1 = parse_form(input_form_1);
     form_2 = parse_form(input_form_2);
     result = NULL;
@@ -99,8 +104,5 @@ int main() {
     free_product_list(form_1);
     free_product_list(form_2);
     free_product_list(result);
-//    t = clock() - t;
-//    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
-//    printf("psf took %f seconds to execute \n", time_taken);
     return 0;
 }
