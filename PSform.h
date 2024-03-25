@@ -14,10 +14,11 @@ struct product_head {
 };
 
 struct product_head *parse_form(char *string);
-void free_products_list(struct product_head* product);
+void free_product_list(struct product_head* product);
 void print_psf(struct product_head*);
 int is_equal(struct product_head **a, struct product_head **b);
-void add(struct product_head **a, struct product_head **b);
-void subtract(struct product_head **a, struct product_head **b);
+struct product_head *add(struct product_head *a, struct product_head *b);
+struct product_head *subtract(struct product_head *a, struct product_head *b);
+struct product_head *multiply_forms(struct product_head *a, struct product_head *b);
 
 #endif //INTERNTASK_PSFORM_H

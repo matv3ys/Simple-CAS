@@ -7,155 +7,58 @@
 #define WITH_COEFS 1
 #define WITHOUT_COEFS 0
 
-void free_product(struct product_head* product) {
-    struct factor *cur = product->first;
+void free_factor_list(struct factor* first_factor) {
+    struct factor *cur = first_factor;
     struct factor *next;
     while (cur != NULL) {
         next = cur->next;
         free(cur);
         cur = next;
     }
-    free(product);
 }
 
-void free_products_list(struct product_head* product) {
+void free_product_list(struct product_head* product) {
     struct product_head *cur = product;
     struct product_head *next;
     while (cur != NULL) {
         next = cur->next;
-        free_product(cur);
-        //free(cur);
+        free_factor_list(cur->first);
+        free(cur);
         cur = next;
     }
 }
 
-/*
-struct factor *copy_factor(struct factor *src) {
-    struct factor *res = NULL;
+// Used during form parsing and multiplication operations
+struct factor *factor_list_insert(struct factor *first_factor, struct factor *new_factor) {
     struct factor *cur;
-    struct factor *new_factor;
-
-    if (src == NULL) {
-        return res;
+    struct factor *next;
+    if (first_factor == NULL) {
+        return new_factor;
     }
-
-    res = (struct factor *) malloc(sizeof(struct factor));
-    if (res == NULL)
-        return res;
-    memcpy(res, src, sizeof(struct factor));
-    res->variable = src->vafactor
-    res->coef = src->coef;
-
-    cur = res;
-    src = src->next;
-    while (src != NULL) {
-        new_factor = (struct factor *) malloc(sizeof(struct factor));
-        if (new_factor == NULL) {
-            free_product(res);
-            return NULL;
-        }
-        memcpy(new_factor, src, sizeof(struct factor));
-        new_factor->first = copy_factor(src->first);
-        cur->next = new_factor;
-        cur = cur->next;
-        src = src->next;
+    if (new_factor->variable == '_') { // For convenience of multiplication operation
+        first_factor->coef *= new_factor->coef;
+        free(new_factor);
+        return first_factor;
     }
-    return res;
-}
-
-
-struct product_head *copy_sum(struct product_head *src) {
-    struct product_head *res = NULL;
-    struct product_head *cur;
-    struct product_head *new_product;
-
-    if (src == NULL) {
-        return res;
+    cur = first_factor;
+    while (1) {
+        next = cur->next;
+        if (next == NULL) {
+            cur->next = new_factor;
+            return first_factor;
+        }
+        if (next->variable == new_factor->variable) {
+            next->coef += new_factor->coef;
+            free(new_factor);
+            return first_factor;
+        }
+        if (new_factor->variable < next->variable) {
+            cur->next = new_factor;
+            new_factor->next = next;
+            return first_factor;
+        }
+        cur = next;
     }
-
-    res = (struct product_head *) malloc(sizeof(struct product_head));
-    if (res == NULL)
-        return res;
-    memcpy(res, src, sizeof(struct product_head));
-    res->first = copy_factor(src->first);
-
-    cur = res;
-    src = src->next;
-    while (src != NULL) {
-        new_product = (struct product_head *) malloc(sizeof(struct product_head));
-        if (new_product == NULL) {
-            free_product(res);
-            return NULL;
-        }
-        memcpy(new_product, src, sizeof(struct product_head));
-        new_product->first = copy_factor(src->first);
-        cur->next = new_product;
-        cur = cur->next;
-        src = src->next;
-    }
-    return res;
-}
- */
-
-void print_psf(struct product_head *product) {
-    struct factor* cur_factor;
-    char variable;
-    short is_not_first_product = 0;
-    short printed_coef = 0;
-    int exponent;
-    int coef;
-
-    if (product == NULL) {
-        printf("0\n");
-        return;
-    }
-
-    while (product != NULL) {
-        cur_factor = product->first;
-        coef = cur_factor->coef;
-        if (is_not_first_product) {
-            if (coef >= 0) {
-                printf(" + ");
-            } else {
-                printf(" - ");
-                coef = abs(coef);
-            }
-        } else {
-            is_not_first_product = 1;
-            if (coef < 0) {
-                putchar('-');
-                coef = abs(coef);
-            }
-        }
-        cur_factor = cur_factor->next;
-        if (coef != 1 || cur_factor == NULL) {
-            printf("%d", coef);
-            printed_coef = 1;
-        }
-        if (cur_factor != NULL) {
-            exponent = cur_factor->coef - 1;
-            variable = cur_factor->variable;
-            if (printed_coef) {
-                putchar('*');
-                printed_coef = 0;
-            }
-            putchar(variable);
-            for (int i = 0; i < exponent; i++) {
-                printf("*%c", variable);
-            }
-            cur_factor = cur_factor->next;
-        }
-        while (cur_factor != NULL) {
-            exponent = cur_factor->coef;
-            variable = cur_factor->variable;
-            for (int i = 0; i < exponent; i++) {
-                printf("*%c", variable);
-            }
-            cur_factor = cur_factor->next;
-        }
-        product = product->next;
-    }
-    putchar('\n');
 }
 
 /*
@@ -205,53 +108,16 @@ int compare_products(int with_coefs, struct product_head *a, struct product_head
     return 0;
 }
 
-struct product_head *sum_insert_with_merge(struct product_head *list, struct product_head *product) {
-    struct product_head *prev;
-    struct product_head *next;
-    int cmp;
-
-    if (list == NULL)
-        return product;
-    if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >=  0) {
-        if (!cmp) {
-            list->first->coef += product->first->coef;
-            free_product(product);
-            return list;
-        }
-        product->next = list;
-        return product;
-    }
-    prev = list;
-    next = list->next;
-    while (1) {
-        if (next == NULL) {
-            prev->next = product;
-            return list;
-        }
-        if ((cmp = compare_products(WITHOUT_COEFS, product, next)) >= 0) {
-            if (!cmp) {
-                next->first->coef += product->first->coef;
-                free_product(product);
-                return list;
-            }
-            prev->next = product;
-            product->next = next;
-            return list;
-        }
-        prev = next;
-        next = prev->next;
-    }
-}
-
 struct product_head *clear_zero_products(struct product_head *products_list) {
     struct product_head *res = NULL;
-    struct product_head *end = NULL;
-    struct product_head *cur = NULL;
+    struct product_head *end;
+    struct product_head *cur;
     while (products_list != NULL) {
         if (products_list->first->coef == 0) {
             cur = products_list;
             products_list = products_list->next;
-            free_product(cur);
+            free_factor_list(cur->first);
+            free(cur);
             continue;
         }
         if (res == NULL) {
@@ -269,6 +135,124 @@ struct product_head *clear_zero_products(struct product_head *products_list) {
     return res;
 }
 
+// Inserts a new element and makes simplification if possible
+struct product_head *product_list_insert(struct product_head *list, struct product_head *product) {
+    struct product_head *prev;
+    struct product_head *next;
+    int cmp;
+
+    if (list == NULL)
+        return product;
+    if ((cmp = compare_products(WITHOUT_COEFS, product, list)) >=  0) {
+        if (!cmp) {
+            list->first->coef += product->first->coef;
+            free_factor_list(product->first);
+            free(product);
+            return list;
+        }
+        product->next = list;
+        return product;
+    }
+    prev = list;
+    next = list->next;
+    while (1) {
+        if (next == NULL) {
+            prev->next = product;
+            return list;
+        }
+        if ((cmp = compare_products(WITHOUT_COEFS, product, next)) >= 0) {
+            if (!cmp) {
+                next->first->coef += product->first->coef;
+                free_factor_list(product->first);
+                free(product);
+                return list;
+            }
+            prev->next = product;
+            product->next = next;
+            return list;
+        }
+        prev = next;
+        next = prev->next;
+    }
+}
+
+struct factor *copy_factor_list(struct factor *src) {
+    struct factor *res = NULL;
+    struct factor *cur;
+    struct factor *new_factor;
+
+    if (src == NULL) {
+        return res;
+    }
+
+    res = (struct factor *) malloc(sizeof(struct factor));
+    if (res == NULL)
+        return res;
+    res->variable = src->variable;
+    res->coef = src->coef;
+    res->next = NULL;
+
+    cur = res;
+    src = src->next;
+    while (src != NULL) {
+        new_factor = (struct factor *) malloc(sizeof(struct factor));
+        if (new_factor == NULL) {
+            free_factor_list(res);
+            return NULL;
+        }
+        new_factor->variable = src->variable;
+        new_factor->coef = src->coef;
+        new_factor->next = NULL;
+        cur->next = new_factor;
+        cur = cur->next;
+        src = src->next;
+    }
+    return res;
+}
+
+
+struct product_head *copy_product_list(struct product_head *src) {
+    struct product_head *res = NULL;
+    struct product_head *cur;
+    struct product_head *new_product;
+
+    if (src == NULL) {
+        return res;
+    }
+
+    res = (struct product_head *) malloc(sizeof(struct product_head));
+    if (res == NULL)
+        return res;
+    res->degree = src->degree;
+    res->first = copy_factor_list(src->first);
+    if (res->first == NULL) {
+        free(res);
+        return NULL;
+    }
+    res->next = NULL;
+
+    cur = res;
+    src = src->next;
+    while (src != NULL) {
+        new_product = (struct product_head *) malloc(sizeof(struct product_head));
+        if (new_product == NULL) {
+            free_product_list(res);
+            return NULL;
+        }
+        new_product->degree = src->degree;
+        new_product->first = copy_factor_list(src->first);
+        if (new_product->first == NULL) {
+            free_product_list(res);
+            return NULL;
+        }
+        new_product->next = NULL;
+        cur->next = new_product;
+        cur = cur->next;
+        src = src->next;
+    }
+    return res;
+}
+
 struct product_head *sort(struct product_head *products_list) {
     struct product_head *res = NULL;
     struct product_head *cur;
@@ -276,55 +260,10 @@ struct product_head *sort(struct product_head *products_list) {
         cur = products_list;
         products_list = products_list->next;
         cur->next = NULL;
-        res = sum_insert_with_merge(res, cur);
+        res = product_list_insert(res, cur);
     }
     res = clear_zero_products(res);
     return res;
-}
-
-int is_equal(struct product_head **a, struct product_head **b) {
-    struct product_head *cur_a;
-    struct product_head *cur_b;
-
-    *a = sort(*a);
-    *b = sort(*b);
-    cur_a = *a;
-    cur_b = *b;
-    while (cur_a != NULL && cur_b != NULL) {
-        if (compare_products(WITH_COEFS, cur_a, cur_b) != 0)
-            return 1;
-        cur_a = (cur_a)->next;
-        cur_b = (cur_b)->next;
-    }
-    if (cur_a == NULL && cur_b == NULL)
-        return 0;
-    else
-        return 1;
-}
-
-void add(struct product_head **a, struct product_head **b) {
-    struct product_head *cur;
-
-    *a  = sort(*a);
-    while (*b != NULL) {
-        cur = *b;
-        *b = (*b)->next;
-        cur->next = NULL;
-        *a = sum_insert_with_merge(*a, cur);
-    }
-    *a = clear_zero_products(*a);
-}
-
-void negate_sum(struct product_head *a) {
-    while (a != NULL) {
-        a->first->coef *= -1;
-        a = a->next;
-    }
-}
-
-void subtract(struct product_head **a, struct product_head **b) {
-    negate_sum(*b);
-    add(a, b);
 }
 
 // removes unused characters
@@ -332,7 +271,7 @@ char *remove_chars(char *string, size_t size) {
     char c;
     size_t pos = 0;
     for (size_t i = 0; i < size; i++) {
-        c = string[i]; //TODO operators priority
+        c = string[i];
         if (c == 42 || c == 43 || c == 45 || (47 < c && c < 58) || (64 < c && c < 91) || (96 < c && c < 123)) {
             string[pos++] = c;
         }
@@ -401,39 +340,8 @@ char *parse_string(char *string) {
     return string;
 }
 
-struct factor *product_insert_with_merge(struct factor *first_factor, struct factor *new_factor) {
-    struct factor *cur;
-    struct factor *next;
-    if (first_factor == NULL) {
-        return new_factor;
-    }
-    if (new_factor->variable == '_') {
-        first_factor->coef *= new_factor->coef;
-        free(new_factor);
-        return first_factor;
-    }
-    cur = first_factor;
-    while (1) {
-        next = cur->next;
-        if (next == NULL) {
-            cur->next = new_factor;
-            return first_factor;
-        }
-        if (next->variable == new_factor->variable) {
-            next->coef += new_factor->coef;
-            free(new_factor);
-            return first_factor;
-        }
-        if (new_factor->variable < next->variable) {
-            cur->next = new_factor;
-            new_factor->next = next;
-            return first_factor;
-        }
-        cur = next;
-    }
-}
 
-// TODO: rewrite, split into funcs
+
 struct product_head *create_product(char *product_token) {
     struct product_head *product;
     struct factor *new_factor;
@@ -447,7 +355,7 @@ struct product_head *create_product(char *product_token) {
     is_coef = 0;
     if (factor_token[0] == '-' || isdigit(factor_token[0])) {
         is_coef = 1;
-        coef = atoi(factor_token); //TODO -x
+        coef = atoi(factor_token);
     }
 
     product = (struct product_head *) malloc(sizeof(struct product_head));
@@ -474,13 +382,14 @@ struct product_head *create_product(char *product_token) {
     while (factor_token != NULL) {
         new_factor = (struct factor *) malloc(sizeof(struct factor));
         if (new_factor == NULL) {
-            free_product(product);
+            free_factor_list(product->first);
+            free(product);
             return NULL;
         }
         new_factor->variable = factor_token[0];
         new_factor->coef = 1;
         new_factor->next = NULL;
-        product->first = product_insert_with_merge(product->first, new_factor);
+        product->first = factor_list_insert(product->first, new_factor);
         product->degree += 1;
         factor_token = strtok(NULL, "*");
     }
@@ -489,8 +398,7 @@ struct product_head *create_product(char *product_token) {
 
 struct product_head *parse_form(char *string) {
     struct product_head *products_list = NULL;
-    struct product_head *products_list_end = NULL;
-    struct product_head *product = NULL;
+    struct product_head *product;
     char *end_of_string;
     char* product_token;
 
@@ -508,18 +416,14 @@ struct product_head *parse_form(char *string) {
 
         if (product == NULL) {
             free(string);
+            free_product_list(products_list);
             return NULL;
         }
         if (product->first->coef != 0) {
-            if (products_list == NULL) {
-                products_list = product;
-                products_list_end = product;
-            } else {
-                products_list_end->next = product;
-                products_list_end = product;
-            }
+            products_list = product_list_insert(products_list, product);
         } else {
-            free_product(product);
+            free_factor_list(product->first);
+            free(product);
         }
         if (product_token + offset_next < end_of_string)
             product_token = strtok(product_token + offset_next, "+");
@@ -529,4 +433,163 @@ struct product_head *parse_form(char *string) {
 
     free(string);
     return products_list;
+}
+
+int is_equal(struct product_head **a, struct product_head **b) {
+    struct product_head *cur_a;
+    struct product_head *cur_b;
+
+    //*a = sort(*a);
+    //*b = sort(*b);
+    cur_a = *a;
+    cur_b = *b;
+    while (cur_a != NULL && cur_b != NULL) {
+        if (compare_products(WITH_COEFS, cur_a, cur_b) != 0)
+            return 1;
+        cur_a = (cur_a)->next;
+        cur_b = (cur_b)->next;
+    }
+    if (cur_a == NULL && cur_b == NULL)
+        return 0;
+    else
+        return 1;
+}
+
+struct product_head *add(struct product_head *a, struct product_head *b) {
+    struct product_head *res = copy_product_list(a);
+    struct product_head *terms = copy_product_list(b);
+    struct product_head *cur;
+
+    while (terms != NULL) {
+        cur = terms;
+        terms = terms->next;
+        cur->next = NULL;
+        res = product_list_insert(res, cur);
+    }
+    res = clear_zero_products(res);
+    return res;
+}
+
+void negate_sum(struct product_head *a) {
+    while (a != NULL) {
+        a->first->coef *= -1;
+        a = a->next;
+    }
+}
+
+// Performs a - b
+struct product_head *subtract(struct product_head *a, struct product_head *b) {
+    struct product_head *res;
+    struct product_head *b_copy = copy_product_list(b);
+
+    negate_sum(b_copy);
+    res = add(a, b_copy);
+    free_product_list(b_copy);
+    return res;
+}
+
+
+struct product_head *multiply_form_product(struct product_head *form, struct factor *first_factor) {
+    struct product_head *res = copy_product_list(form);
+    struct product_head *cur_product = res;
+    struct factor *factor_list;
+    struct factor *cur_factor;
+
+    while (cur_product != NULL) {
+        factor_list = copy_factor_list(first_factor);
+        while (factor_list != NULL) {
+            cur_factor = factor_list;
+            factor_list = factor_list->next;
+            cur_factor->next = NULL;
+            if (cur_factor->variable != '_') {
+                cur_product->degree += cur_factor->coef;
+            }
+            cur_product->first = factor_list_insert(cur_product->first, cur_factor);
+        }
+        cur_product = cur_product->next;
+    }
+    return res;
+}
+
+struct product_head *multiply_forms(struct product_head *a, struct product_head *b) {
+    struct product_head *res = NULL;
+    struct product_head *products;
+    struct product_head *cur_product;
+
+    if (a == NULL || b == NULL) {
+        return res;
+    }
+    while (b != NULL) {
+        products = multiply_form_product(a, b->first);
+        while (products != NULL) {
+            cur_product = products;
+            products = products->next;
+            cur_product->next = NULL;
+            res = product_list_insert(res, cur_product);
+        }
+        b = b->next;
+    }
+    res = clear_zero_products(res);
+    return res;
+}
+
+void print_psf(struct product_head *product) {
+    struct factor* cur_factor;
+    char variable;
+    short is_not_first_product = 0;
+    short printed_coef = 0;
+    int exponent;
+    int coef;
+
+    if (product == NULL) {
+        printf("0\n");
+        return;
+    }
+
+    while (product != NULL) {
+        cur_factor = product->first;
+        coef = cur_factor->coef;
+        if (is_not_first_product) {
+            if (coef >= 0) {
+                printf(" + ");
+            } else {
+                printf(" - ");
+                coef = abs(coef);
+            }
+        } else {
+            is_not_first_product = 1;
+            if (coef < 0) {
+                putchar('-');
+                coef = abs(coef);
+            }
+        }
+        cur_factor = cur_factor->next;
+        if (coef != 1 || cur_factor == NULL) {
+            printf("%d", coef);
+            printed_coef = 1;
+        }
+        if (cur_factor != NULL) {
+            exponent = cur_factor->coef - 1;
+            variable = cur_factor->variable;
+            if (printed_coef) {
+                putchar('*');
+                printed_coef = 0;
+            }
+            putchar(variable);
+            for (int i = 0; i < exponent; i++) {
+                printf("*%c", variable);
+            }
+            cur_factor = cur_factor->next;
+        }
+        while (cur_factor != NULL) {
+            exponent = cur_factor->coef;
+            variable = cur_factor->variable;
+            for (int i = 0; i < exponent; i++) {
+                printf("*%c", variable);
+            }
+            cur_factor = cur_factor->next;
+        }
+        product = product->next;
+    }
+    putchar('\n');
 }

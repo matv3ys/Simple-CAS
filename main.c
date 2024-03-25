@@ -8,7 +8,7 @@ char *get_str() {
     char buf[11] = {0};
     char *res = NULL;
     int len = 0;
-    int n = 0;
+    int n;
 
     do {
         n = scanf("%10[^\n]", buf);
@@ -35,11 +35,11 @@ char *get_str() {
     return res;
 }
 
-int check_operation(char operation) {
+int check_operation(int operation) {
     switch (operation) {
-        case '=':;
-        case '+':;
-        case '-':;
+        case '=':
+        case '+':
+        case '-':
         case '*':
             return 0;
         default:
@@ -49,11 +49,13 @@ int check_operation(char operation) {
 
 int main() {
     //clock_t t;
-    char operation;
+    int operation;
     char *input_form_1;
     char *input_form_2;
     struct product_head *form_1;
     struct product_head *form_2;
+    struct product_head *result;
+
     operation = getchar();
     if (getchar() != '\n' || check_operation(operation)) {
         printf("Error on reading operation code\n");
@@ -74,25 +76,31 @@ int main() {
     //t = clock();
     form_1 = parse_form(input_form_1);
     form_2 = parse_form(input_form_2);
+    result = NULL;
     switch (operation) {
         case '=':
             printf("%s\n", is_equal(&form_1, &form_2) ? "not equal" : "equal");
             break;
         case '+':
-            add(&form_1, &form_2);
-            print_psf(form_1);
+            result = add(form_1, form_2);
+            print_psf(result);
             break;
         case '-':
-            subtract(&form_1, &form_2);
-            print_psf(form_1);
+            result = subtract(form_1, form_2);
+            print_psf(result);
+            break;
+        case '*':
+            result = multiply_forms(form_1, form_2);
+            print_psf(result);
             break;
         default:
             printf("Runtime error\n");
     }
-    free_products_list(form_1);
-    free_products_list(form_2);
-    //t = clock() - t;
-    //double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
-    //printf("psf took %f seconds to execute \n", time_taken);
+    free_product_list(form_1);
+    free_product_list(form_2);
+    free_product_list(result);
+//    t = clock() - t;
+//    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+//    printf("psf took %f seconds to execute \n", time_taken);
     return 0;
 }

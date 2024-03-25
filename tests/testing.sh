@@ -8,7 +8,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-for i in {1..13}; do
+for i in {1..20}; do
     input_file="./tests/test${i}.txt"
     output_file="./tests/output${i}.txt"
 

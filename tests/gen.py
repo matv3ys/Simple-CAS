@@ -1,6 +1,7 @@
 import sys
 import random
 from sympy import sympify, poly
+import re
 
 operations = ['+', '-', '=', '*', '!=']
 
@@ -17,7 +18,6 @@ def get_output(op: str, form_1: str, form_2: str) -> str:
     elif op == "*":
         return to_spf(str(poly(sympify(form_1) * sympify(form_2)).as_expr()))
 
-
 def product():
     coef = random.randint(-100, 100)
     if coef >= 0:
@@ -31,20 +31,17 @@ def product():
 
 def sm():
     res = []
-    for i in range(200):
+    for i in range(110):
         res.append(product())
     return ''.join(res)
 
 
-def to_spf(input_string: str) -> str:
-    res = input_string
-    pos = res.find("**")
-    while pos != -1:
-        var = res[pos - 1]
-        exponent = int(res[pos+2])
-        res = res[:pos - 1] + f'{var}*' * (exponent - 1) + var + res[pos + 3:]
-        pos = res.find("**")
-    return res
+def to_spf(expression):
+    pattern = r'([a-zA-Z]+)\s*\*\*\s*(\d+)'
+    replaced_expression = re.sub(pattern,
+                                 lambda match: match.group(1) + ('*' + match.group(1)) * (int(match.group(2)) - 1),
+                                 expression)
+    return replaced_expression
 
 
 if __name__ == "__main__":
