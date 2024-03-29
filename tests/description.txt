@@ -1,40 +1,39 @@
-Тесты с большими входными данными (100 слагаемых 26 переменных) генерируются при помощи gen.py с подключенной
-библиотекой компьютерной алгебры sympy, если тест существует - будет перезаписан.
-Синтаксис: python3 gen.py [операция] [номер теста]
-Пример: python3 gen.py + 10
-Выходные данные - test10.txt output 10.txt
+Tests with large input data (100 products with 26 variables) are generated using gen.py
+Syntax: python3 gen.py [operation] [test number]
+Example: python3 gen.py + 10
+Output data: test10.txt output 10.txt
 
-ВНИМАНИЕ!!!: Если тест с заданным номером существует он будет перезаписан! Номера 1-20 зарезервированы.
+WARNING!!!: If a test with the specified number exists, it will be overwritten! Numbers 1-20 are reserved.
 
 
-Для тестирования написаны два скрипта: ./testing.sh ./profiling.sh
+Two scripts are written for testing: ./testing.sh ./profiling.sh
 
-Перед использованием: chmod +x testing.sh
-                      chmod +x profiling.sh
+Before use: chmod +x testing.sh
+            chmod +x profiling.sh
 
-1. Запуск тестов: $ ./testing.sh
-2. Запуск тестов c MemorySanitizer: $ ./testing.sh memory
-3. Запуск тестов c AddressSanitizer: $ ./testing.sh address
-4. Профилирование: $ ./profiling.sh [номер теста]
+1. Run tests: ./testing.sh
+2. Run tests with MemorySanitizer: ./testing.sh memory
+3. Run tests with AddressSanitizer: ./testing.sh address
+4. Profiling: ./profiling.sh [test number]
 
-Краткое описание имеющихся тестов:
-1. Сравнение разных форм одинаковой длины
-2. Сравнение одинаковых форм
-3. Сравнение разных форм разной длины
-4. Равные формы большого размера
-5. Обычное сложение
-6. Сложение с 0
-7. Сложение с приведением подобных
-8. Сложение форм большого размера
-9. Обычное вычитание
-10. Вычитание с приведением подобных
-11. Вычитание 0
-12. Вычитание из 0
-13. Разность форм большого размера
-14. Обычное умножение
-15. Умножение на 0
-16. Умножение на -1
-17. Умножение на 1
-18. Умножение с приведением подобных 1
-19. Умножение с приведением подобных 2
-20. Умножение форм большого размера
+Brief description of available tests:
+1. Comparison of different polynomials of the same length
+2. Comparison of identical polynomials
+3. Comparison of different polynomials of different lengths
+4. Equal polynomials of large size
+5. Normal addition
+6. Addition with 0
+7. Addition with similar terms reduction
+8. Addition of forms of large size
+9. Normal subtraction
+10. Subtraction with similar terms reduction
+11. Subtraction of 0
+12. Subtraction from 0
+13. Difference of polynomials of large size
+14. Normal multiplication
+15. Multiplication by 0
+16. Multiplication by -1
+17. Multiplication by 1
+18. Multiplication with similar terms reduction 1
+19. Multiplication with similar terms reduction 2
+20. Multiplication of polynomials of large size
