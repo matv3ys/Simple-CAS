@@ -6,7 +6,7 @@ Additionally, the program correctly handles input that is not shortest sum of pr
 
 ## Installation
 ```cmd
-git clone https://github.com/matv3ys/Web-project.git
+git clone https://github.com/matv3ys/Simple-CAS
 cd Simple-CAS && make
 ```
 
