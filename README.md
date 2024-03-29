@@ -25,29 +25,29 @@ Running:
 ```
 
 ### Example 1:
-*Input:*
+**Input:**
 ```cmd
 +
 x + 2 * x * y - 3
 y + x*x
 ```
-*Output:*
+**Output:**
 ```cmd
 x*x + 2*x*y + x + y - 3
 ```
 ### Example 2:
-*Input:*
+**Input:**
 ```cmd
 -
 -x*y*z + 2*x*y - z
 -x*y*z - 2*z + 5
 ```
-*Output:*
+**Output:**
 ```cmd
 2*x*y + z - 5
 ```
 ### Example 3:
-*Input:*
+**Input:**
 ```cmd
 *
 a - b
@@ -58,24 +58,24 @@ a * a + a * b + b * b
 a*a*a - b*b*b
 ```
 ### Example 4:
-*Input:*
+**Input:**
 ```cmd
 =
 -1*x*x*y + 5*y * y + 1 * z * z  - 3 * x - 1*y
 -y + 5*y*y + z * z -3 * x - x*x*y
 ```
-*Output:*
+**Output:**
 ```cmd
 equal
 ```
 ### Example 5:
-*Input:*
+**Input:**
 ```cmd
 =
 -x*y*y + 5 * x + y
 -x*y*y + 4 * x + y
 ```
-*Output:*
+**Output:**
 ```cmd
 not equal
 ```
