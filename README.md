@@ -53,7 +53,7 @@ x*x + 2*x*y + x + y - 3
 a - b
 a * a + a * b + b * b
 ```
-*Output:*
+**Output:**
 ```cmd
 a*a*a - b*b*b
 ```
